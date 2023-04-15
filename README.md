@@ -19,3 +19,5 @@ Once it's installed you can run the server by typing
 This will start up the app on port 3000. 
 
 This will enable you to run the client program which will reach out to port 5000 on localhost. The API endpoint is not locked down by any security but does need to be run from the same server as the client to not get cors errors.
+
+Note that the project was scaffolded from an HTML/CSS template and there are a lot of left over HTML files in the project that are not actually used by the client application.
