@@ -42,8 +42,12 @@ const Page = (stuffers) => {
   const [totalPacketSize, setTotalPacketSize] = useState(0);
 
   const [totalFrameCount, setTotalFrameCount] = useState(0);
+  
   const [susPortFrames, setSusPortFrames] = useState([]);
   const [togglePorts, setTogglePorts] = useState(false);
+
+  const [packetTypes, setPacketTypes] = useState([]);
+  const [togglePackets, setTogglePackets] = useState(false);
 
   let { state } = useLocation()
   const settings = useSettings();
@@ -53,10 +57,48 @@ const Page = (stuffers) => {
   useEffect(() => {    
     averagePacketSize();
     suspiciousUdpPorts();
+    getPacketTypes();
   }, [])
+
+  const togglePacketsTable = () => {
+    setTogglePackets(!togglePackets)
+  }
 
   const togglePortsTable = () => {
     setTogglePorts(!togglePorts)
+  }
+
+  function groupObjectsByFrequency(array, key) {
+    // Create an empty object to store the groups
+    const groups = {};
+  
+    // Loop through each object in the array
+    array.forEach((obj) => {
+      // Get the value of the specified key for the current object
+      const value = obj[key];
+  
+      // If the group for this value doesn't exist yet, create it
+      if (!groups[value]) {
+        groups[value] = [];
+      }
+  
+      // Add the current object to the group for this value
+      groups[value].push(obj);
+    });
+  
+    // Return the object with the groups
+    return groups;
+  }
+
+  const getPacketTypes = () => {
+    let filteredFrames = state.filter(f => f !== null);
+    console.info({filteredFrames})
+    let udpFrames = filteredFrames.filter(f => 'udp' in f).map(m => m.udp).filter(f => f.sourcePort !== 443);
+
+    let temp = groupObjectsByFrequency(udpFrames, 'udpPacketType')
+    
+    setPacketTypes(temp);
+    
   }
 
   function suspiciousUdpPorts() {
@@ -72,7 +114,6 @@ const Page = (stuffers) => {
     let susPorts = seenPorts.filter(f => commonUdpPorts.includes(f) === false);
     
     let susFrames = udpFrames.filter(f => susPorts.includes(f.udp.destinationPort));
-
   
     setSusPortFrames(susFrames)
 
@@ -129,6 +170,53 @@ const Page = (stuffers) => {
 
     }
 
+  }
+  const showPacketsTable = () => {
+    return (
+      <Card>
+      <CardHeader
+        title="UDP Packet Types Seen"
+      />
+
+        <Table sx={{ minWidth: 600 }}>
+          <TableHead>
+            <TableRow>
+              <TableCell>
+                Packet Type
+              </TableCell>
+              <TableCell>
+                Frequency
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {Object.keys(packetTypes).map( (key, idx) => {
+            
+              let frame = packetTypes[key];
+              if (frame[0].udpPacketType === "UDP_PACKET_TYPE_DEFAULT") {
+                return null;
+              }
+              return (
+                <TableRow
+                  key={`_${idx}`}
+                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                >
+                  <TableCell>
+                    {frame[0].udpPacketType}
+                  </TableCell>
+                  <TableCell>
+                    {frame.length}
+                  </TableCell>
+
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      
+    </Card>
+
+    )
   }
 
   const showUdpTable = () => {
@@ -319,14 +407,39 @@ const Page = (stuffers) => {
                   </Button>
                 )}
                 chartSeries={[]}
-                title="Suspicious Countries"
+                title="Sus. Countries"
                 value="1 Country"
               />
-            </Grid>  
+            </Grid>
+            <Grid
+              xs={12}
+              md={4}
+            >
+              <AnalyticsStats
+                action={(
+                  <Button
+                    color="inherit"
+                    endIcon={(
+                      <SvgIcon>
+                        <ArrowRightIcon />
+                      </SvgIcon>
+                    )}
+                    size="small"
+                    onClick={togglePacketsTable}
+                  >
+                    See details
+                  </Button>
+                )}
+                chartSeries={[]}
+                title="UDP Packet Types"
+                value={Object.keys(packetTypes).length-1}
+              />
+            </Grid>              
           </Grid>
 
           <br />
           {togglePorts && showUdpTable()}
+          {togglePackets && showPacketsTable()}
 
         </Container>
       </Box>

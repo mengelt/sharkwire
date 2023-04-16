@@ -74,7 +74,7 @@ export const AnalyticsStats = (props) => {
         alignItems="center"
         direction="row"
         justifyContent="space-between"
-        spacing={2}
+        spacing={1}
         sx={{
           px: 3,
           py: 2
